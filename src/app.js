@@ -15,4 +15,11 @@ app.use(express.urlencoded({limit: '16kb',extended: true})) // For the URL param
 app.use(express.static('public')) // Configuring the static file serve folder
 app.use(cookieParser())   // To handle the cookies created on the user's end
 
+
+//Importing User router
+import userRouter from "./routes/user.routes.js"
+
+//Handling route control
+app.use("/api/v1/users", userRouter)
+
 export {app}
