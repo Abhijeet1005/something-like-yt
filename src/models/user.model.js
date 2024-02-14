@@ -15,7 +15,7 @@ const userSchema = new  Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
+        // unique: true,  Commented so that we can have multiple usernames  per email
         trim: true,
         lowercase: true,
     },
@@ -50,7 +50,7 @@ const userSchema = new  Schema({
 
 userSchema.pre('save',async function(){      
     if(!this.isModified("password")) return next();         //Here we are using normal function because we want the pre to have the context ('this') of the user schema
-    this.password = bcrypt.hash(this.password, 8)
+    this.password = await bcrypt.hash(this.password, 8)
     next()
 })
 
