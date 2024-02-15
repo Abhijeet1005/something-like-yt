@@ -1,12 +1,12 @@
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import {uploadOnClodinary} from "../utils/cloudinary.js";
+import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import {ApiResponse}  from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler( async (req,res)=>{
     const {fullname,username,email,password} = req.body
-    console.log(email,fullname,username,password)
+    // console.log(email,fullname,username,password)
 
     //check that required fields are not empty 
     if(
@@ -19,35 +19,38 @@ const registerUser = asyncHandler( async (req,res)=>{
     }
 
     //db query for existing user
-    const existingUser = User.findOne({
-        username,
+    const existingUser = await User.findOne({
+        username:username,
         // $or: [{ username },{ email }]  //This operator if we want both email and username to be unique
     })
+
     if(existingUser){
         throw new ApiError(409, "username already taken")
     }
-    // console.log(req.files) // Remove later
+
     const avatarTempPath = req.files?.avatar[0]?.path;
-    const coverImageTempPath = req.files?.coverImage[0].path;
+    const coverImageTempPath = req.files?.coverImage[0]?.path;
 
     if(!avatarTempPath){
         throw new ApiError(400, "Avatar is required")
     }
-    
-    const avatarCloudinary = await uploadOnClodinary(avatarTempPath)
-    const coverImageCloudinary = await uploadOnClodinary(coverImageTempPath)
 
-    if(!avatarCloudinary){
-        throw new ApiError(400,"Avatar is required")
-    }
+    // const avatarCloudinary = await uploadOnCloudinary(avatarTempPath)
+    // const coverImageCloudinary = await uploadOnCloudinary(coverImageTempPath)
+
+    // if(!avatarCloudinary){
+    //     throw new ApiError(400,"Avatar is required.")
+    // }
 
     const user = await User.create({
         fullname,
         email,
-        avatar: avatarCloudinary.url,
-        coverImage: coverImageCloudinary?.url || "",  //We havent marked coverImage as necessary so we do this check
+        // avatar: avatarCloudinary.url,
+        avatar: avatarTempPath,
+        // coverImage: coverImageCloudinary?.url || "",  //We havent marked coverImage as necessary so we do this check
+        coverImage: coverImageTempPath,
         username: username.toLowerCase(),
-        password
+        password,
     })
     
     //Now we send data of the newly created use but excluding the password and refresh token
@@ -67,6 +70,9 @@ const registerUser = asyncHandler( async (req,res)=>{
 export {registerUser}
 
 
+/*
+Cloudinary is not uploading images so the code for fetching upload urls is commented for now
+*/
 
 
 

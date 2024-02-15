@@ -48,7 +48,7 @@ const userSchema = new  Schema({
 
 },{timestamps: true})
 
-userSchema.pre('save',async function(){      
+userSchema.pre('save',async function(next){      
     if(!this.isModified("password")) return next();         //Here we are using normal function because we want the pre to have the context ('this') of the user schema
     this.password = await bcrypt.hash(this.password, 8)
     next()
