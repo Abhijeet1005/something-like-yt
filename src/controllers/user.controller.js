@@ -6,7 +6,6 @@ import {ApiResponse}  from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler( async (req,res)=>{
     const {fullname,username,email,password} = req.body
-    // console.log(email,fullname,username,password)
 
     //check that required fields are not empty 
     if(
@@ -35,20 +34,18 @@ const registerUser = asyncHandler( async (req,res)=>{
         throw new ApiError(400, "Avatar is required")
     }
 
-    // const avatarCloudinary = await uploadOnCloudinary(avatarTempPath)
-    // const coverImageCloudinary = await uploadOnCloudinary(coverImageTempPath)
+    const avatarCloudinary = await uploadOnCloudinary(avatarTempPath)
+    const coverImageCloudinary = await uploadOnCloudinary(coverImageTempPath)
 
-    // if(!avatarCloudinary){
-    //     throw new ApiError(400,"Avatar is required.")
-    // }
+    if(!avatarCloudinary){
+        throw new ApiError(400,"Avatar is required.")
+    }
 
     const user = await User.create({
         fullname,
         email,
-        // avatar: avatarCloudinary.url,
-        avatar: avatarTempPath,
-        // coverImage: coverImageCloudinary?.url || "",  //We havent marked coverImage as necessary so we do this check
-        coverImage: coverImageTempPath,
+        avatar: avatarCloudinary.url,
+        coverImage: coverImageCloudinary?.url || "",  //We havent marked coverImage as necessary so we do this check
         username: username.toLowerCase(),
         password,
     })
@@ -68,11 +65,6 @@ const registerUser = asyncHandler( async (req,res)=>{
 })
 
 export {registerUser}
-
-
-/*
-Cloudinary is not uploading images so the code for fetching upload urls is commented for now
-*/
 
 
 
