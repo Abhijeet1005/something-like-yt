@@ -4,6 +4,23 @@ import { User } from "../models/user.model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import {ApiResponse}  from "../utils/ApiResponse.js";
 
+const generateTokens = async function(user){
+    //we have passed the user here to avoid making another database call
+
+    try {
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({validateBeforeSave: false})
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong on our end")
+    }
+
+}
+
 const registerUser = asyncHandler( async (req,res)=>{
     const {fullname,username,email,password} = req.body
 
@@ -28,7 +45,11 @@ const registerUser = asyncHandler( async (req,res)=>{
     }
 
     const avatarTempPath = req.files?.avatar[0]?.path;
-    const coverImageTempPath = req.files?.coverImage[0]?.path;
+
+    let coverImageTempPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageTempPath = req.files.coverImage[0].path
+    }
 
     if(!avatarTempPath){
         throw new ApiError(400, "Avatar is required")
@@ -64,7 +85,55 @@ const registerUser = asyncHandler( async (req,res)=>{
     )
 })
 
-export {registerUser}
+const loginUser = asyncHandler( async (req,res)=>{
+
+    const {email, password} = req.body
+    
+    if(!email){
+        throw new ApiError(401,"Email is required")
+    }
+
+    let user = await User.findOne({
+        email: email
+    })
+
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+
+    const checkPass = await user.isPasswordCorrect(password)
+
+    if(!checkPass){
+        throw new ApiError(401,"Re-check the credentials")
+    }
+    //Now we will generate the Acc and Ref tokens and send the Acc and Ref back to user
+    const {accessToken,refreshToken} = await generateTokens(user)
+
+    //Getting the same user without the password and refreshToken included
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res.status(200)
+    .cookie("accessToken",accessToken, cookieOptions)
+    .cookie("refreshToken",refreshToken,cookieOptions)
+    .json(
+        new ApiResponse(
+            statusCode = 200,
+            message = "Logged in successfully",
+            data = {
+                user: loggedInUser,accessToken,refreshToken,
+            }
+        )
+    )
+
+
+})
+
+export {registerUser,loginUser}
 
 
 

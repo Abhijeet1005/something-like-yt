@@ -15,7 +15,7 @@ const userSchema = new  Schema({
     email: {
         type: String,
         required: true,
-        // unique: true,  Commented so that we can have multiple usernames  per email
+        unique: true,
         trim: true,
         lowercase: true,
     },
@@ -54,6 +54,8 @@ userSchema.pre('save',async function(next){
     next()
 })
 
+
+//These methods below are available with per 'user' and not in the whole User model, make sure to keep this in mind when accessing these
 //This method check for the password entered 
 userSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compare(password, this.password)
