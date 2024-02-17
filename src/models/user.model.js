@@ -58,7 +58,9 @@ userSchema.pre('save',async function(next){
 //These methods below are available with per 'user' and not in the whole User model, make sure to keep this in mind when accessing these
 //This method check for the password entered 
 userSchema.methods.isPasswordCorrect = async function(password){
-    return await bcrypt.compare(password, this.password)
+    const response = await bcrypt.compare(password, this.password)
+
+    return  response
 }
 
 userSchema.methods.generateAccessToken = function(){
