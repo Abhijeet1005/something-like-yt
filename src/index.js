@@ -12,7 +12,7 @@ connectDB()
     console.log(`MongoDB connected with host: ${host} 🎉 `)
 
     app.listen(process.env.PORT,()=>{
-        console.log(`App listening on port ${process.env.PORT}`)
+        console.log(`App listening on port ${process.env.PORT} 👂`)
     })
 
     app.on('error',(err)=>{
