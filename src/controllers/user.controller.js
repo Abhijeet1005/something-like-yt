@@ -189,7 +189,27 @@ const tokenReset = asyncHandler( async (req,res)=>{
 
 })
 
-export {registerUser,loginUser,logoutUser,tokenReset}
+const resetPassword = asyncHandler(async (req,res)=>{
+
+    const {oldPass,newPass} = req.body
+    const user = await User.findById(req.user._id)
+
+    if(!user.isPasswordCorrect(oldPass)){
+        throw new ApiError(400, "Old password is incorrect")
+    }
+    
+    user.password = newPass
+    await user.save({validateBeforeSave: false})
+
+    return res.status(200)
+    .json(new ApiResponse(
+        200,
+        "Password upadated successfully",
+        {}
+    ))
+
+})
+export {registerUser,loginUser,logoutUser,tokenReset,resetPassword}
 
 
 
