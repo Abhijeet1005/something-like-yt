@@ -209,7 +209,20 @@ const resetPassword = asyncHandler(async (req,res)=>{
     ))
 
 })
-export {registerUser,loginUser,logoutUser,tokenReset,resetPassword}
+
+const getUser = asyncHandler(async (req,res)=>{
+    if(!req.user){                                         //This check isnt necessary
+        throw new ApiError(400, "Unable to find user")
+    }
+
+    res.status(200)
+    .json(new ApiResponse(
+        200,
+        "User found",
+        req.user
+    ))
+})
+export {registerUser,loginUser,logoutUser,tokenReset,resetPassword,getUser}
 
 
 
