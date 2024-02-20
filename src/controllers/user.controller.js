@@ -215,14 +215,47 @@ const getUser = asyncHandler(async (req,res)=>{
         throw new ApiError(400, "Unable to find user")
     }
 
-    res.status(200)
+    return res.status(200)
     .json(new ApiResponse(
         200,
         "User found",
         req.user
     ))
 })
-export {registerUser,loginUser,logoutUser,tokenReset,resetPassword,getUser}
+
+const updateAvatar = asyncHandler(async(req,res)=>{
+    const avatarLocalPath = req.files?.avatar[0]?.path
+    // const user  = User.findById(req.user?._id).select("-password -refreshToken")
+    if(!req.user){
+        throw new ApiError(401,"Unable to find user")
+    }
+    if(!avatarLocalPath){
+        throw new ApiError(401,"Unable to find avatar file")
+    }
+    
+    const avatarCloudinary = await uploadOnCloudinary(avatarLocalPath)
+    if(!avatarCloudinary){
+        throw new ApiError(500,"Avatar change failed, Please try again")
+    }
+    console.log(avatarCloudinary)
+
+    let user = await User.findById(req.user._id).select("-password -refreshToken")
+    user.avatar = avatarCloudinary.url
+    await user.save({validateBeforeSave: false}).then(
+        newUser => {
+            user = newUser
+        }
+    )
+
+    return res.status(200)
+    .json(new ApiResponse(
+        200,
+        "Avatar upadate successfully",
+        user
+    ))
+})
+
+export {registerUser,loginUser,logoutUser,tokenReset,resetPassword,getUser,updateAvatar}
 
 
 
