@@ -224,7 +224,7 @@ const getUser = asyncHandler(async (req,res)=>{
 })
 
 const updateAvatar = asyncHandler(async(req,res)=>{
-    const avatarLocalPath = req.files?.avatar[0]?.path
+    const avatarLocalPath = req.file?.path
     // const user  = User.findById(req.user?._id).select("-password -refreshToken")
     if(!req.user){
         throw new ApiError(401,"Unable to find user")
@@ -237,7 +237,7 @@ const updateAvatar = asyncHandler(async(req,res)=>{
     if(!avatarCloudinary){
         throw new ApiError(500,"Avatar change failed, Please try again")
     }
-    console.log(avatarCloudinary)
+    // console.log(avatarCloudinary)
 
     let user = await User.findById(req.user._id).select("-password -refreshToken")
     user.avatar = avatarCloudinary.url
@@ -254,8 +254,39 @@ const updateAvatar = asyncHandler(async(req,res)=>{
         user
     ))
 })
+const updateCoverImage = asyncHandler(async(req,res)=>{
+    const coverImageLocalPath = req.file?.path
 
-export {registerUser,loginUser,logoutUser,tokenReset,resetPassword,getUser,updateAvatar}
+    if(!req.user){
+        throw new ApiError(401,"Unable to find user")
+    }
+    if(!coverImageLocalPath){
+        throw new ApiError(401,"Unable to find Image file")
+    }
+    
+    const coverImageCloudinary = await uploadOnCloudinary(coverImageLocalPath)
+    if(!coverImageCloudinary){
+        throw new ApiError(500,"Cover Image change failed, Please try again")
+    }
+
+
+    let user = await User.findById(req.user._id).select("-password -refreshToken")
+    user.coverImage = coverImageCloudinary.url
+    await user.save({validateBeforeSave: false}).then(
+        newUser => {
+            user = newUser
+        }
+    )
+
+    return res.status(200)
+    .json(new ApiResponse(
+        200,
+        "Cover Image upadate successfully",
+        user
+    ))
+})
+
+export {registerUser,loginUser,logoutUser,tokenReset,resetPassword,getUser,updateAvatar,updateCoverImage}
 
 
 
