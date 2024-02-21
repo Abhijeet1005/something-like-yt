@@ -3,6 +3,7 @@ import fs from "fs"
 
 //Needed to do this otherwise the envs were not accessible with process.env
 import dotenv from 'dotenv';
+import { log } from "console";
 dotenv.config({
     path: './.env'
 })
@@ -34,6 +35,25 @@ const uploadOnCloudinary = async (localPath) => {
     }
 }
 
+const removeFromCloudinary = async (imageUrl)=>{
+    try {
+        if(!imageUrl) return null
+
+        //Regex for public ID extraction 
+        //It takes the ID between last / and . that way all extensions are supported
+        const regex = /\/v\d+\/([^\/]+)\.[^\/]+$/;
+        const match = imageUrl.match(regex);
+
+        const response = await cloudinary.uploader.destroy(match[1],{resource_type: 'image'})
+        if(response){
+            console.log("Old Image removed")
+        }
+    } catch (error) {
+        return null
+    }
+
+}
 
 
-export {uploadOnCloudinary}
+
+export {uploadOnCloudinary,removeFromCloudinary}

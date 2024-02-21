@@ -1,9 +1,10 @@
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import {uploadOnCloudinary} from "../utils/cloudinary.js";
+import {uploadOnCloudinary,removeFromCloudinary} from "../utils/cloudinary.js";
 import {ApiResponse}  from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+
 
 const generateTokens = async function(user){
     //we have passed the user here to avoid making another database call
@@ -237,15 +238,17 @@ const updateAvatar = asyncHandler(async(req,res)=>{
     if(!avatarCloudinary){
         throw new ApiError(500,"Avatar change failed, Please try again")
     }
-    // console.log(avatarCloudinary)
+
 
     let user = await User.findById(req.user._id).select("-password -refreshToken")
+    const oldAvatarUrl = user.avatar
     user.avatar = avatarCloudinary.url
     await user.save({validateBeforeSave: false}).then(
         newUser => {
             user = newUser
         }
     )
+    await removeFromCloudinary(oldAvatarUrl)
 
     return res.status(200)
     .json(new ApiResponse(
@@ -254,6 +257,7 @@ const updateAvatar = asyncHandler(async(req,res)=>{
         user
     ))
 })
+
 const updateCoverImage = asyncHandler(async(req,res)=>{
     const coverImageLocalPath = req.file?.path
 
@@ -271,13 +275,16 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
 
 
     let user = await User.findById(req.user._id).select("-password -refreshToken")
+
+    const oldCoverImage = user.coverImage
+    console.log(oldCoverImage)
     user.coverImage = coverImageCloudinary.url
     await user.save({validateBeforeSave: false}).then(
         newUser => {
             user = newUser
         }
     )
-
+    await removeFromCloudinary(oldCoverImage)
     return res.status(200)
     .json(new ApiResponse(
         200,
