@@ -293,7 +293,89 @@ const updateCoverImage = asyncHandler(async(req,res)=>{
     ))
 })
 
-export {registerUser,loginUser,logoutUser,tokenReset,resetPassword,getUser,updateAvatar,updateCoverImage}
+const fetchChannelProfile = asyncHandler(async(req,res)=>{
+    const {username} = req.params
+
+    if(!username){
+        throw new ApiError(401,"Username required")
+    }
+
+    const profile = await User.aggregate([{
+        $match: {
+            username: username?.toLowerCase()
+        }
+    },
+    {
+        $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "channel",
+            as: "subscribers"
+        }
+    },
+    {
+        $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "subscriber",
+            as: "subscribedTo"
+        }
+    },
+    {
+        $addFields: {
+            subscibersCount: {
+                $size: "$subscribers"
+            },
+            subscribedToCount: {
+                $size: "$subscribedTo"
+            },
+            isSubscribed: {
+                $cond: {
+                    if: {$in: [req.body?._id,"$subscribers.subscriber"]},
+                    then: true,
+                    else: false
+                }
+            } 
+        },
+        $project: {
+            username: 1,
+            fullname: 1,
+            email: 1,
+            avatar: 1,
+            coverImage: 1,
+            subscibersCount: 1,
+            subscribedToCount: 1,
+            isSubscribed: 1,
+        }
+    }])
+    // The profile then returns an array of documents (in above case there will be a single document inside that array because we are fetching single user)
+
+    if(!profile?.length){
+        throw new ApiError(404,"User does not exist")
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200,
+            "User fetched successfully",
+            profile[0]
+        )
+    )
+    
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    tokenReset,
+    resetPassword,
+    getUser,
+    updateAvatar,
+    updateCoverImage,
+    fetchChannelProfile
+}
 
 
 
