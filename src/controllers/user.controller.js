@@ -134,18 +134,25 @@ const loginUser = asyncHandler( async (req,res)=>{
 const logoutUser = asyncHandler(async (req,res)=>{
 
     //We fetch the user ID from the req.user passed then update its refreshToken 
-    await User.findByIdAndUpdate(req.user._id,{
-        $set:{
-            refreshToken: undefined
+    const loggedOutUser = await User.findByIdAndUpdate(req.user._id,{
+
+        //Unset just removes the field from the fetched document
+        $unset:{
+            refreshToken: 1,
+            password: 1
         }
-    })
+    },
+    {
+        new: true,
+    }
+    )
 
     // Then we also delete the cookies to properly logout the user
     return res.status(200)
     .clearCookie("accessToken",cookieOptions)
     .clearCookie("refreshToken",cookieOptions)
     .json(new ApiResponse(
-        200,"Logged out successfully",{}
+        200,"Logged out successfully",loggedOutUser
     ))
 })
 
@@ -399,7 +406,7 @@ const fetchChannelProfile = asyncHandler(async(req,res)=>{
 
 const getWatchHistory = asyncHandler(async(req,res)=>{
     //Getting  req.user
-    const user = User.aggregate([
+    const user = await User.aggregate([
         {
             $match: {
                 _id: new mongoose.Types.ObjectId(req.user?._id)
@@ -434,7 +441,7 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
                     {
                         $addFields: {
                             owner: {
-                                $first: "owner"
+                                $first: "$owner"
                             }
                         }
                     }
@@ -475,14 +482,3 @@ export {
 
 
 
-
-
-/*
-The asyncHandler function takes another function requestHandler as its parameter. It returns a new function that will be used as middleware in the Express.js application.
-
-The returned function takes req, res, and next as parameters.
-It wraps the requestHandler function in a Promise.resolve().
-If the promise resolves successfully, it moves to the next middleware or route handler.
-If there's an error during the asynchronous operation, it catches the error and passes it to the next function, triggering error handling.
-
-*/

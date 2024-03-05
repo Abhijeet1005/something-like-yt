@@ -1,5 +1,5 @@
 import {Router} from "express";
-import { loginUser, registerUser , logoutUser, tokenReset, resetPassword, getUser, updateAvatar, updateCoverImage, updateUser } from "../controllers/user.controller.js";
+import { loginUser, registerUser , logoutUser, tokenReset, resetPassword, getUser, updateAvatar, updateCoverImage, updateUser, fetchChannelProfile, getWatchHistory } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { JWTcheck } from "../middlewares/auth.middleware.js";
 
@@ -24,12 +24,16 @@ router.route('/resetToken').post(tokenReset)
 
 router.route('/resetPassword').post(JWTcheck,resetPassword)
 
-router.route('/updateUser').post(JWTcheck,updateUser)
+router.route('/updateUser').patch(JWTcheck,updateUser)
 
 router.route('/getUser').post(JWTcheck,getUser)
 
-router.route('/updateAvatar').post(upload.single("avatar"),JWTcheck,updateAvatar)
+router.route('/updateAvatar').patch(JWTcheck,upload.single("avatar"),updateAvatar)
 
-router.route('/updateCoverImage').post(upload.single("CoverImage"),JWTcheck,updateCoverImage)
+router.route('/updateCoverImage').patch(JWTcheck,upload.single("CoverImage"),updateCoverImage)
+
+router.route('/channel/:username').get(JWTcheck,fetchChannelProfile)
+
+router.route('/watchHistory').get(JWTcheck,getWatchHistory)
 
 export default router
