@@ -18,8 +18,10 @@ app.use(cookieParser())   // To handle the cookies created on the user's end
 
 //Importing User router
 import userRouter from "./routes/user.routes.js"
+import videoRouter from "./routes/video.routes.js"
 
 //Handling route control
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/videos", videoRouter)
 
 export {app}

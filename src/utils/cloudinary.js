@@ -35,18 +35,18 @@ const uploadOnCloudinary = async (localPath) => {
     }
 }
 
-const removeFromCloudinary = async (imageUrl)=>{
+const removeFromCloudinary = async (url)=>{
     try {
-        if(!imageUrl) return null
+        if(!url) return null
 
         //Regex for public ID extraction 
         //It takes the ID between last / and . that way all extensions are supported
         const regex = /\/v\d+\/([^\/]+)\.[^\/]+$/;
-        const match = imageUrl.match(regex);
+        const match = url.match(regex);
 
-        const response = await cloudinary.uploader.destroy(match[1],{resource_type: 'image'})
+        const response = await cloudinary.uploader.destroy(match[1],{resource_type: 'auto'})
         if(response){
-            console.log("Old Image removed")
+            console.log("Old file removed")
         }
     } catch (error) {
         return null
