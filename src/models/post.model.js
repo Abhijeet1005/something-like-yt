@@ -8,7 +8,7 @@ const postSchema = new Schema({
     },
 
     owner: {
-        type: mongoose.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User",
     }
 
