@@ -2,7 +2,7 @@ import { Video } from "../models/video.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { removeFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js"
 
 const getAllVideos = asyncHandler(async (req,res)=>{
     
@@ -54,8 +54,8 @@ const uploadVideo = asyncHandler(async (req,res)=>{
     const video = await Video.create({
         title,
         description,
-        videoFile: videoCloudinary.url,
         thumbnail: thumbnailCloudinary.url,
+        videoFile: videoCloudinary.url,
         duration: videoCloudinary.duration,
         owner: req.user?._id,
     })
@@ -63,9 +63,6 @@ const uploadVideo = asyncHandler(async (req,res)=>{
     if(!video){
         throw new ApiError(401, "Unable to upload video")
     }
-
-    console.log(video)
-
     return res.status(200)
     .json(
         new ApiResponse(
@@ -76,8 +73,139 @@ const uploadVideo = asyncHandler(async (req,res)=>{
     )
 })
 
+const getVideoById = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+
+    if(!videoId){
+        throw new ApiError(400,"Video ID needed")
+    }
+
+    const video = await Video.findById(videoId)
+
+    if(!video){
+        throw new ApiError(401, "Unable to fetch the video")
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200,
+            "Video fetched from database",
+            video
+        )
+    )
+})
+
+const deleteVideo = asyncHandler(async (req, res) => {
+    /*
+    check the video ID in params,
+    fetch the video,
+    check for video document
+    check for owner and logged in user to be same,
+    if same then delete the files from cloudinary, 
+    then delete the document,
+    send a response back
+    */
+    
+    const { videoId } = req.params
+
+    if(!videoId){
+        throw new ApiError(400,"Video ID needed")
+    }
+
+    const video = await Video.findById(videoId)
+    // console.log(req.user._id.toString())
+    // console.log(video.owner.toString())
+
+
+    if(!(req.user._id.toString() === video.owner.toString())){
+        
+        throw new ApiError(401,"Only owner can delete the video")
+    }
+
+    await removeFromCloudinary(video.videoFile)
+    await removeFromCloudinary(video.thumbnail)
+
+    await Video.findByIdAndDelete(videoId)
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200,
+            "Video deleted successfully"
+        )
+    )
+})
+
+const updateVideo = asyncHandler(async (req, res)=>{
+    const { videoId } = req.params
+
+    if(!videoId){
+        throw new ApiError(400,"Video ID needed")
+    }
+
+    const {title, description,} = req.body
+
+    if(
+        [title,description].some((field)=> field?.trim() === "") 
+    ){
+        throw new ApiError(400,"All fields are required")
+    }
+
+    const thumbnailLocalPath = req.file?.path
+
+    if(!thumbnailLocalPath){
+        throw new ApiError(400, "Thumbnail not provided")
+    }
+    
+    const video = await Video.findById(videoId)
+
+    const oldThumbnailCloudinary = video.thumbnail
+
+    if(!video){
+        throw new ApiError(401, "Unable to fetch the video")
+    }
+    
+    const thumbnailCloudinary = await uploadOnCloudinary(thumbnailLocalPath)
+
+    if(!thumbnailCloudinary){
+        throw new ApiError(401, "Unable to upload thumbnail")
+    }
+
+    const updatedVideo = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            title,
+            description,
+            thumbnail: thumbnailCloudinary.url,
+        },
+        {
+            new: true
+        }
+    )
+
+    if(!updatedVideo){
+        throw new ApiError(401, "Unable to update video details")
+    }
+
+    await removeFromCloudinary(oldThumbnailCloudinary)
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200,
+            "Video updated successfully",
+            updatedVideo
+        )
+    )
+
+})
+
 
 export {
     getAllVideos,
-    uploadVideo
+    uploadVideo,
+    getVideoById,
+    deleteVideo,
+    updateVideo
 }
